@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学習内容確認ページ</title>
+    <style>
+        /* CSSスタイルは変更なし */
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; } .app-container { width: 100%; max-width: 800px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); overflow: hidden; } .header { background-color: #4a90e2; color: white; padding: 20px; text-align: center; } .header h1 { margin: 0; font-size: 1.8em; } .header p { margin: 5px 0 0; opacity: 0.9; } .content-area { padding: 30px; } .menu-title { font-size: 1.5em; color: #4a90e2; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 20px; } .menu-list { list-style: none; padding: 0; margin: 0; } .menu-item button { display: block; width: 100%; background-color: #fff; color: #333; border: 1px solid #ddd; padding: 15px 20px; margin-bottom: 10px; border-radius: 8px; font-size: 1.1em; text-align: left; cursor: pointer; transition: all 0.2s ease; } .menu-item button:hover { background-color: #f0f5fc; border-color: #4a90e2; transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); } #quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; } .quiz-controls button { margin-left: 10px; font-size: 0.8em; padding: 8px 12px; } .back-button { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s; } .back-button:hover { background-color: #5a6268; } .question-item { display: flex; align-items: center; justify-content: space-between; background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef; } .question-text { flex-grow: 1; margin: 0; line-height: 1.6; } .answer-button { flex-shrink: 0; margin-left: 20px; padding: 8px 15px; font-size: 0.9em; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; min-width: 80px; } .answer-button.toggled { background-color: #ffc107; color: #333; } .revealed-answer { color: #d9534f; font-weight: bold; background-color: #f9e5e4; padding: 2px 5px; border-radius: 3px; } .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header"><h1>学習内容確認ページ</h1><p>科目や単元を選んで学習を始めましょう</p></header>
+        <main class="content-area">
+            <div id="main-menu"><h2 class="menu-title">学習項目の選択</h2><ul id="main-menu-list" class="menu-list"></ul></div>
+            <div id="sub-menu" class="hidden"><button id="back-to-main-menu" class="back-button">← 学習項目選択に戻る</button><h2 id="sub-menu-title" class="menu-title"></h2><ul id="sub-menu-list" class="menu-list"></ul></div>
+            <div id="quiz-area" class="hidden"><div id="quiz-header"><button id="back-to-sub-menu" class="back-button">← 単元選択に戻る</button><div class="quiz-controls"><button id="show-all-btn" class="back-button">全ての答えを表示</button><button id="hide-all-btn" class="back-button">全ての答えを隠す</button></div></div><h2 id="quiz-title"></h2><div id="quiz-content"></div></div>
+        </main>
+    </div>
+
+    <script src="./data/it_literacy_data.js"></script>
+    <script src="./data/web_app1.js"></script>
+    <script src="./data/kikaihonyaku_eisaku.js"></script>
+    <script src="./data/tagengo_it_komyu.js"></script>
+    <script src="./data/tutawaru_rinri.js"></script>
+
+    <script>
+        // --- 読み込んだデータを一つのオブジェクトにまとめる ---
+        // 上の<script>タグで読み込んだ 'itLiteracyData' などの変数をここで使います
+        const allQuizData = {
+            "ITリテラシー": itLiteracyData,
+            "Webアプリケーション開発1": webApplicationKaihatu1Data,
+            "機械翻訳実践(英語読解・作文)": kikaiHonyakuEsakuData,
+            "多言語ITコミュニケーション": tagengoItData,
+            "伝わる倫理とコミュニケーション": tutawaryrinriData,
+            // "Pythonプログラミング": pythonData, // Pythonを追加する場合の例
+        };
+        // --- データここまで ---
+
+
+        // --- この下の処理は、変数名以外は変更ありません ---
+        const mainMenu = document.getElementById('main-menu');
+        const subMenu = document.getElementById('sub-menu');
+        const quizArea = document.getElementById('quiz-area');
+        const mainMenuList = document.getElementById('main-menu-list');
+        const subMenuTitle = document.getElementById('sub-menu-title');
+        const subMenuList = document.getElementById('sub-menu-list');
+        const quizTitle = document.getElementById('quiz-title');
+        const quizContent = document.getElementById('quiz-content');
+        const backToMainMenuBtn = document.getElementById('back-to-main-menu');
+        const backToSubMenuBtn = document.getElementById('back-to-sub-menu');
+        const showAllBtn = document.getElementById('show-all-btn');
+        const hideAllBtn = document.getElementById('hide-all-btn');
+        let currentTopic = '';
+
+        function parseCSV(csvText) {
+            if (!csvText) return [];
+            const lines = csvText.trim().split('\n');
+            const header = lines.shift();
+            return lines.map(line => {
+                const parts = line.split(',');
+                if (parts.length < 2) return null;
+                const question = parts[0].trim();
+                const answer = parts.slice(1).join(',').trim();
+                return (question && answer) ? { question, answer } : null;
+            }).filter(item => item);
+        }
+
+        function renderMainMenu() {
+            mainMenuList.innerHTML = '';
+            for (const topicName in allQuizData) {
+                const li = document.createElement('li');
+                li.classList.add('menu-item');
+                const button = document.createElement('button');
+                button.textContent = topicName;
+                button.onclick = () => renderSubMenu(topicName);
+                li.appendChild(button);
+                mainMenuList.appendChild(li);
+            }
+        }
+
+        function renderSubMenu(topicName) {
+            currentTopic = topicName;
+            const subTopics = allQuizData[topicName];
+            subMenuTitle.textContent = topicName;
+            subMenuList.innerHTML = '';
+            for (const subTopicName in subTopics) {
+                const li = document.createElement('li');
+                li.classList.add('menu-item');
+                const button = document.createElement('button');
+                button.textContent = subTopicName;
+                button.onclick = () => loadQuiz(topicName, subTopicName);
+                li.appendChild(button);
+                subMenuList.appendChild(li);
+            }
+            mainMenu.classList.add('hidden');
+            subMenu.classList.remove('hidden');
+        }
+
+        function loadQuiz(topicName, subTopicName) {
+            quizTitle.textContent = subTopicName;
+            const csvText = allQuizData[topicName][subTopicName];
+            const quizData = parseCSV(csvText);
+            renderQuiz(quizData);
+            subMenu.classList.add('hidden');
+            quizArea.classList.remove('hidden');
+        }
+
+        function renderQuiz(quizData) {
+            quizContent.innerHTML = '';
+            if (quizData.length === 0) {
+                quizContent.textContent = 'この単元の問題はありません。';
+                return;
+            }
+            quizData.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.classList.add('question-item');
+                const p = document.createElement('p');
+                p.classList.add('question-text');
+                p.textContent = item.question;
+                p.dataset.original = item.question;
+                p.dataset.answer = item.answer;
+                const button = document.createElement('button');
+                button.classList.add('answer-button');
+                button.textContent = '答え';
+                button.onclick = () => toggleAnswer(p, button);
+                div.appendChild(p);
+                div.appendChild(button);
+                quizContent.appendChild(div);
+            });
+        }
+
+        function toggleAnswer(pElement, buttonElement, forceState = null) {
+            const isRevealed = buttonElement.classList.contains('toggled');
+            const show = forceState === 'show' || (!isRevealed && forceState !== 'hide');
+            if (show) {
+                pElement.innerHTML = pElement.dataset.original.replace('[　　]', `<span class="revealed-answer">${pElement.dataset.answer}</span>`);
+                buttonElement.textContent = '隠す';
+                buttonElement.classList.add('toggled');
+            } else {
+                pElement.textContent = pElement.dataset.original;
+                buttonElement.textContent = '答え';
+                buttonElement.classList.remove('toggled');
+            }
+        }
+
+        backToMainMenuBtn.onclick = () => { subMenu.classList.add('hidden'); mainMenu.classList.remove('hidden'); };
+        backToSubMenuBtn.onclick = () => { quizArea.classList.add('hidden'); renderSubMenu(currentTopic); };
+        showAllBtn.onclick = () => document.querySelectorAll('.question-item').forEach(item => toggleAnswer(item.querySelector('.question-text'), item.querySelector('.answer-button'), 'show'));
+        hideAllBtn.onclick = () => document.querySelectorAll('.question-item').forEach(item => toggleAnswer(item.querySelector('.question-text'), item.querySelector('.answer-button'), 'hide'));
+        
+        window.onload = renderMainMenu;
+    </script>
+</body>
+</html>
