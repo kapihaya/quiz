@@ -15,7 +15,7 @@ Question,Answer
 make(letまたはhave) + 人 + 動詞原型 で[　　]という意味,人に～させる
 see + that節 で[　　]という意味,～とわかる
 動詞 + that節 のかたちの場合、動詞の意味の系統は[　　]の2種類だけ,発言(例：say) と 思考(例：think)
-have + 名詞 + 過去分詞 は[　　],名詞が～される
+have + 名詞 + 過去分詞 は[　　],名詞が～される (例：my heart broken)
 get + 形容詞 は[　　],～になる
 allow + 名詞 + to ~ は[　　],名詞が～することを許す
 run + C [　　],Cになる
